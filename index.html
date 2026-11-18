@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Apalancamiento | Trading Pockets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e100f; --panel:#161917; --panel2:#1d211e; --line:#2a2f2b;
+    --text:#ece9e1; --muted:#8d928a; --accent:#ffb020; --accent-ink:#1a1204;
+    --green:#4ade80; --red:#ff6b5b; --yellow:#ffd166; --orange:#ff8a3d;
+    --ui:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--ui);color:var(--text);min-height:100vh;padding:0 20px 40px;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(900px 420px at 8% -8%, rgba(255,176,32,.10), transparent 60%),
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:auto, 44px 44px, 44px 44px;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
+
+  /* TOP BAR */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 0;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:38px;height:38px;border:1.5px solid var(--accent);border-radius:9px 9px 9px 2px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:.85rem;color:var(--accent);letter-spacing:-.04em}
+  .wordmark{font-weight:700;letter-spacing:.14em;font-size:.82rem;text-transform:uppercase}
+  .wordmark small{display:block;font-weight:500;letter-spacing:.06em;color:var(--muted);text-transform:none;font-size:.72rem;margin-top:2px}
+  .tag{font-family:var(--mono);font-size:.7rem;color:var(--muted);border:1px solid var(--line);padding:6px 10px;border-radius:999px;white-space:nowrap}
+  .tag b{color:var(--accent);font-weight:500}
+
+  /* HERO */
+  .hero{padding:44px 0 26px}
+  .hero h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.02;font-weight:700;letter-spacing:-.03em;max-width:15ch}
+  .hero h1 em{font-style:normal;color:var(--accent)}
+  .hero p{color:var(--muted);margin-top:14px;max-width:56ch;font-size:1rem;line-height:1.55}
+
+  /* KPI STRIP */
+  .strip{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;margin-bottom:22px}
+  .kpi{padding:20px 22px;border-right:1px solid var(--line);position:relative}
+  .kpi:last-child{border-right:0}
+  .kpi.main{background:linear-gradient(180deg,rgba(255,176,32,.09),transparent 70%)}
+  .kpi.main::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--accent)}
+  .kpi .k{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .kpi .v{font-family:var(--mono);font-weight:700;font-size:1.35rem;margin-top:10px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;word-break:break-word}
+  .kpi.main .v{font-size:1.75rem}
+  .kpi .d{font-size:.72rem;color:var(--muted);margin-top:8px;line-height:1.4}
+
+  /* MAIN LAYOUT */
+  .layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:22px;align-items:start}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px}
+  .step{padding:22px 24px;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .step-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+  .step-h i{font-style:normal;font-family:var(--mono);font-size:.72rem;color:var(--accent);border:1px solid rgba(255,176,32,.45);border-radius:6px;padding:2px 7px}
+  .step-h h3{font-size:.95rem;font-weight:600;letter-spacing:.01em}
+  label{display:block;font-size:.8rem;color:var(--muted);margin:16px 0 7px;font-weight:500}
+  .step-h + label, .step-h + .seg{margin-top:0}
+
+  .input{display:flex;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 14px;transition:border-color .15s, box-shadow .15s}
+  .input:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,176,32,.14)}
+  .input span{color:var(--accent);margin-right:8px;font-family:var(--mono)}
+  .input input{background:transparent;border:0;outline:0;color:var(--text);font-family:var(--mono);font-size:1.02rem;padding:12px 0;width:100%}
+  .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .levels label{margin-top:0}
+
+  .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .chip{flex:1;min-width:50px;padding:8px 0;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--mono);font-size:.8rem;text-align:center;transition:all .15s}
+  .chip:hover{color:var(--text);border-color:#3b423d}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg .chip{padding:14px 0;font-family:var(--ui);font-weight:700;font-size:.9rem;letter-spacing:.06em;border-radius:10px}
+  .seg .chip.long.on{background:var(--green);border-color:var(--green);color:#04210f}
+  .seg .chip.short.on{background:var(--red);border-color:var(--red);color:#2a0803}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--line);border-radius:4px;margin:18px 0 4px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);border:4px solid var(--bg);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--accent);border:4px solid var(--bg);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
+  .hint{font-size:.74rem;color:var(--muted);margin-top:8px;line-height:1.5}
+  .hint b{color:var(--accent);font-family:var(--mono)}
+  .err{color:var(--red);font-size:.8rem;margin-top:14px;min-height:1.2em}
+
+  /* RIGHT COLUMN */
+  .side{display:flex;flex-direction:column;gap:22px;position:sticky;top:18px}
+  .card-h{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 0}
+  .card-h h3{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+  /* PRICE LADDER */
+  .ladder{position:relative;height:290px;margin:16px 22px 6px;}
+  .ladder.empty::after{content:"Completá entrada y stop loss";position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:.8rem}
+  .ladder .track{position:absolute;left:34px;top:0;bottom:0;width:2px;background:var(--line);border-radius:2px}
+  .ladder .zone{position:absolute;left:30px;width:10px;border-radius:4px;opacity:.9}
+  .ladder .zone.gain{background:linear-gradient(180deg,var(--green),rgba(74,222,128,.25))}
+  .ladder .zone.loss{background:linear-gradient(180deg,rgba(255,107,91,.25),var(--red))}
+  .ladder .tick{position:absolute;left:24px;width:30px;height:2px;transform:translateY(-1px)}
+  .ladder .lbl{position:absolute;left:70px;right:0;transform:translateY(-50%);display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:var(--mono);font-size:.78rem;padding:4px 10px;border-radius:7px;background:var(--panel2);border-left:3px solid var(--c,var(--muted))}
+  .ladder .lbl b{font-family:var(--ui);font-size:.66rem;letter-spacing:.12em;color:var(--c,var(--muted))}
+  .ladder-note{padding:0 22px 18px;min-height:1.2em;font-size:.74rem;color:var(--muted)}
+
+  /* RISK METER (4 segments, same markup) */
+  .meter{padding:6px 22px 20px}
+  .meter-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+  .meter-top .k{font-size:.85rem;color:var(--muted)}
+  .meter-top .v{font-family:var(--mono);font-weight:700;letter-spacing:.06em}
+  .risk{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .risk div{height:14px;background:var(--panel2);border-radius:3px;transition:background .2s}
+  .risk div:first-child{border-radius:8px 3px 3px 8px}
+  .risk div:last-child{border-radius:3px 8px 8px 3px}
+  .risk div.on.low{background:var(--green)} .risk div.on.mod{background:var(--yellow)}
+  .risk div.on.high{background:var(--orange)} .risk div.on.ext{background:var(--red)}
+  .risk-labels{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:.66rem;color:var(--muted);margin-top:7px;text-align:center;letter-spacing:.06em;text-transform:uppercase}
+
+  /* DETAIL LINES */
+  .lines{padding:4px 22px 8px}
+  .line{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:12px 0;border-bottom:1px dashed var(--line)}
+  .line:last-child{border-bottom:0}
+  .line .k{font-size:.86rem}
+  .line .d{font-size:.7rem;color:var(--muted);margin-top:3px}
+  .line .v{font-family:var(--mono);font-weight:500;text-align:right;font-variant-numeric:tabular-nums;font-size:.9rem}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .warn{font-size:.72rem;color:var(--muted);line-height:1.55;padding:0 22px 20px}
+
+  /* FEES: RECEIPT */
+  .fees{margin-top:22px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:22px;align-items:start}
+  .fees-ctl{padding:22px 24px}
+  .fees-ctl h2{font-size:1.25rem;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+  .fees-ctl .sub{color:var(--muted);font-size:.84rem;margin-bottom:6px}
+  .receipt{background:#f1ede2;color:#1b1c19;border-radius:6px;padding:24px 24px 28px;font-family:var(--mono);position:relative;
+    -webkit-mask:radial-gradient(circle 7px at 7px 100%,#0000 98%,#000) 0 0/14px 100% repeat-x;
+            mask:radial-gradient(circle 7px at 7px 100%,#0000 98%,#000) 0 0/14px 100% repeat-x;}
+  .receipt h4{font-family:var(--ui);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;text-align:center;margin-bottom:14px;color:#55574f}
+  .receipt .line{border-bottom:1px dashed #b9b5a6;padding:10px 0}
+  .receipt .line .k{font-size:.78rem;color:#3a3c36;font-family:var(--ui)}
+  .receipt .line .v{color:#1b1c19;font-size:.84rem}
+  .receipt .line .v.pos{color:#0d7a3b} .receipt .line .v.neg{color:#c2352a}
+  .receipt .line:last-child{border-bottom:0}
+
+  footer{margin-top:36px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.76rem;line-height:1.6;text-align:left}
+
+  @media(max-width:960px){
+    .layout,.fees{grid-template-columns:1fr}
+    .side{position:static}
+    .strip{grid-template-columns:1fr 1fr}
+    .kpi{border-bottom:1px solid var(--line)}
+    .kpi:nth-child(2n){border-right:0}
+    .kpi:nth-child(n+3){border-bottom:0}
+  }
+  @media(max-width:560px){
+    body{padding:0 14px 32px}
+    .tag{display:none}
+    .levels{grid-template-columns:1fr}
+    .levels label{margin-top:14px}
+    .levels > div:first-child label{margin-top:0}
+    .step{padding:20px 18px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark">TP</div>
+      <div class="wordmark">Trading Pockets<small>Gestión de riesgo</small></div>
+    </div>
+    <div class="tag">futuros perpetuos · <b>USDT</b></div>
+  </header>
+
+  <section class="hero">
+    <h1>Calculadora de <em>apalancamiento</em></h1>
+    <p>Calculá tamaño de posición, margen, precio de liquidación y ratio R/R antes de cada operación.</p>
+  </section>
+
+  <!-- KPI STRIP -->
+  <section class="strip">
+    <div class="kpi main">
+      <div class="k">Tamaño de posición</div>
+      <div class="v" id="pos">—</div>
+      <div class="d">Monto total expuesto al mercado</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Margen</div>
+      <div class="v" id="margOut">—</div>
+      <div class="d">Capital bloqueado como garantía</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Riesgo ($)</div>
+      <div class="v neg" id="riskOut">—</div>
+      <div class="d">Pérdida máxima si se activa el SL</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Ratio R/R</div>
+      <div class="v" id="rrOut">—</div>
+      <div class="d">Riesgo/beneficio (≥ 2 recomendado)</div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <!-- INPUTS -->
+    <div class="panel">
+
+      <div class="step">
+        <div class="step-h"><i>01</i><h3>Dirección</h3></div>
+        <div class="seg">
+          <button class="chip long on" data-dir="long">▲ LONG</button>
+          <button class="chip short" data-dir="short">▼ SHORT</button>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-h"><i>02</i><h3>Capital</h3></div>
+        <label>Capital de la cuenta (USDT)</label>
+        <div class="input"><span>$</span><input id="capital" type="number" value="10000" min="0" step="any"></div>
+
+        <label>Capital a usar</label>
+        <div class="row" id="pctRow">
+          <button class="chip" data-pct="0">0%</button>
+          <button class="chip on" data-pct="20">20%</button>
+          <button class="chip" data-pct="25">25%</button>
+          <button class="chip" data-pct="50">50%</button>
+          <button class="chip" data-pct="75">75%</button>
+          <button class="chip" data-pct="100">100%</button>
+        </div>
+        <input type="range" id="pctSlider" min="0" max="100" value="20">
+        <div class="hint" id="pctHint"></div>
+
+        <label>Ingreso manual</label>
+        <div class="input"><span>$</span><input id="margin" type="number" value="2000" min="0" step="any"></div>
+        <div class="hint">Monto en USDT que usarás como margen (se sincroniza con el porcentaje).</div>
+      </div>
+
+      <div class="step">
+        <div class="step-h"><i>03</i><h3>Apalancamiento</h3></div>
+        <div class="row" id="levRow" style="margin-top:0">
+          <button class="chip" data-lev="1">1×</button>
+          <button class="chip" data-lev="5">5×</button>
+          <button class="chip" data-lev="10">10×</button>
+          <button class="chip" data-lev="25">25×</button>
+          <button class="chip" data-lev="50">50×</button>
+          <button class="chip" data-lev="125">125×</button>
+        </div>
+        <input type="range" id="levSlider" min="1" max="125" value="10">
+        <div class="hint">Apalancamiento actual: <b id="levVal">10×</b></div>
+      </div>
+
+      <div class="step">
+        <div class="step-h"><i>04</i><h3>Niveles de precio</h3></div>
+        <div class="levels">
+          <div>
+            <label>Entrada (USDT)</label>
+            <div class="input"><span>$</span><input id="entry" type="number" value="65000" min="0" step="any"></div>
+          </div>
+          <div>
+            <label>Stop loss (USDT)</label>
+            <div class="input"><span>$</span><input id="sl" type="number" value="64350" min="0" step="any"></div>
+          </div>
+          <div>
+            <label>Take profit (opcional)</label>
+            <div class="input"><span>$</span><input id="tp" type="number" value="66950" min="0" step="any"></div>
+          </div>
+        </div>
+        <div class="err" id="err"></div>
+      </div>
+
+    </div>
+
+    <!-- RESULTS -->
+    <div class="side">
+
+      <div class="panel">
+        <div class="card-h"><h3>Mapa de precios</h3></div>
+        <div class="ladder empty" id="ladder"><div class="track"></div></div>
+        <div class="ladder-note" id="ladderNote"></div>
+      </div>
+
+      <div class="panel">
+        <div class="card-h"><h3>Detalle</h3></div>
+        <div class="lines">
+          <div class="line"><div><div class="k">Liquidación</div><div class="d">Precio estimado (mant. margin 0.5%)</div></div><div class="v" id="liqOut">—</div></div>
+          <div class="line"><div class="k">PnL si el TP se activa</div><div class="v" id="tpPnl">—</div></div>
+          <div class="line"><div class="k">PnL si el SL se activa</div><div class="v neg" id="slPnl">—</div></div>
+          <div class="line"><div class="k">Distancia al stop loss</div><div class="v" id="slDist">—</div></div>
+          <div class="line"><div class="k">Distancia a liquidación</div><div class="v" id="liqDist">—</div></div>
+        </div>
+        <div class="meter">
+          <div class="meter-top"><div class="k">Nivel de riesgo</div><div class="v" id="riskLvl">—</div></div>
+          <div class="risk" id="riskBar"><div></div><div></div><div></div><div></div></div>
+          <div class="risk-labels"><span>Bajo</span><span>Moderado</span><span>Alto</span><span>Extremo</span></div>
+        </div>
+        <p class="warn">Los cálculos son estimaciones. El precio real de liquidación depende del exchange, del modo de margen (cruzado/aislado) y de las tasas de financiamiento.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FEES -->
+  <section class="fees">
+    <div class="panel fees-ctl">
+      <h2>Comisiones del exchange</h2>
+      <p class="sub">Costo de apertura y cierre sobre tu posición.</p>
+
+      <label>Exchange</label>
+      <div class="row" id="exRow" style="margin-top:0">
+        <button class="chip on" data-ex="0.02" data-tk="0.05">OKX</button>
+        <button class="chip" data-ex="0.02" data-tk="0.05">Pionex</button>
+      </div>
+
+      <label>Tipo de orden</label>
+      <div class="seg" id="typeRow">
+        <button class="chip on" data-type="taker">MARKET (Taker)</button>
+        <button class="chip" data-type="maker">LIMIT (Maker)</button>
+      </div>
+      <div class="hint" id="feeRates" style="font-family:var(--mono)"></div>
+      <div class="hint">Tarifas de futuros perpetuos (nivel básico): OKX y Pionex, Maker 0.02% / Taker 0.05%. Verificá las tarifas vigentes en cada plataforma.</div>
+    </div>
+
+    <div class="receipt">
+      <h4>Ticket de comisiones</h4>
+      <div class="line"><div class="k">Apertura</div><div class="v" id="feeOpen">—</div></div>
+      <div class="line"><div class="k">Cierre</div><div class="v" id="feeClose">—</div></div>
+      <div class="line"><div class="k">Comisiones totales</div><div class="v" id="feeTotal">—</div></div>
+      <div class="line"><div class="k">% del margen</div><div class="v" id="feePct">—</div></div>
+      <div class="line"><div class="k">PnL NETO si TP (con comisiones)</div><div class="v pos" id="netTp">—</div></div>
+      <div class="line"><div class="k">PnL NETO si SL (con comisiones)</div><div class="v neg" id="netSl">—</div></div>
+    </div>
+  </section>
+
+  <footer>© Trading Pockets · Solo con fines educativos. Operar con apalancamiento implica riesgo de pérdida total del margen.</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const state = { dir:'long', ex:{maker:0.02, taker:0.05}, type:'taker' };
+const fmt = (n, d=2) => isFinite(n) ? n.toLocaleString('en-US',{minimumFractionDigits:d, maximumFractionDigits:d}) : '—';
+const fmtSigned = n => (n>0?'+':'') + fmt(n);
+
+function setActive(container, el){
+  container.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// Direction
+document.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{
+  state.dir=b.dataset.dir;
+  document.querySelectorAll('[data-dir]').forEach(x=>x.classList.toggle('on',x===b));
+  calc();
+});
+
+// Capital % <-> margin sync
+function syncFromPct(p){
+  const cap = +$('capital').value||0;
+  $('pctSlider').value = p;
+  $('margin').value = (cap*p/100).toFixed(2);
+  $('pctHint').textContent = `${p}% de ${fmt(cap)} USDT`;
+  document.querySelectorAll('#pctRow .chip').forEach(c=>c.classList.toggle('on', +c.dataset.pct===p));
+  calc();
+}
+$('pctSlider').oninput = e => syncFromPct(+e.target.value);
+document.querySelectorAll('#pctRow .chip').forEach(c=>c.onclick=()=>syncFromPct(+c.dataset.pct));
+$('margin').oninput = () => {
+  const cap = +$('capital').value||0;
+  const m = +$('margin').value||0;
+  const p = cap>0 ? Math.min(100, m/cap*100) : 0;
+  $('pctSlider').value = p;
+  $('pctHint').textContent = `${fmt(p,1)}% de ${fmt(cap)} USDT`;
+  document.querySelectorAll('#pctRow .chip').forEach(c=>c.classList.remove('on'));
+  calc();
+};
+$('capital').oninput = () => { syncFromPct(+$('pctSlider').value); };
+
+// Leverage
+function setLev(v){
+  v = Math.max(1, Math.min(125, Math.round(v)));
+  $('levSlider').value = v;
+  $('levVal').textContent = v+'×';
+  document.querySelectorAll('#levRow .chip').forEach(c=>c.classList.toggle('on', +c.dataset.lev===v));
+  calc();
+}
+$('levSlider').oninput = e => setLev(+e.target.value);
+document.querySelectorAll('#levRow .chip').forEach(c=>c.onclick=()=>setLev(+c.dataset.lev));
+
+// Exchange & fee type
+document.querySelectorAll('#exRow .chip').forEach(c=>c.onclick=()=>{
+  setActive($('exRow'), c);
+  state.ex = {maker:+c.dataset.ex, taker:+c.dataset.tk};
+  calc();
+});
+document.querySelectorAll('#typeRow .chip').forEach(c=>c.onclick=()=>{
+  setActive($('typeRow'), c);
+  state.type = c.dataset.type;
+  calc();
+});
+
+['entry','sl','tp','capital','margin'].forEach(id=>$(id).addEventListener('input',calc));
+
+// Mapa de precios (solo visual)
+function drawLadder(d){
+  const el = $('ladder'), note = $('ladderNote');
+  el.innerHTML = '<div class="track"></div>';
+  note.textContent = '';
+  if(!d){ el.classList.add('empty'); return; }
+  el.classList.remove('empty');
+  const {entry, sl, tp, liq} = d;
+  const pts = [entry, sl]; if(tp) pts.push(tp);
+  let lo = Math.min(...pts), hi = Math.max(...pts);
+  const pad = (hi-lo)*0.18 || entry*0.01;
+  lo -= pad; hi += pad;
+  const y = p => (hi-p)/(hi-lo)*100;
+
+  const zone = (a, b, cls) => {
+    const z = document.createElement('div');
+    z.className = 'zone '+cls;
+    z.style.top = Math.min(y(a),y(b))+'%';
+    z.style.height = Math.abs(y(a)-y(b))+'%';
+    el.appendChild(z);
+  };
+  zone(entry, sl, 'loss');
+  if(tp) zone(entry, tp, 'gain');
+
+  const items = [
+    {p:entry, t:'ENTRADA', c:'#ffb020'},
+    {p:sl,    t:'SL',      c:'#ff6b5b'}
+  ];
+  if(tp) items.push({p:tp, t:'TP', c:'#4ade80'});
+  if(liq>lo && liq<hi) items.push({p:liq, t:'LIQ', c:'#ff8a3d'});
+  else if(liq>0) note.textContent = 'Liquidación fuera de escala: '+fmt(liq)+' USDT';
+
+  items.forEach(m => m.y = y(m.p));
+  items.sort((a,b)=>a.y-b.y);
+  items.forEach((m,i)=>{ m.ly = i ? Math.max(m.y, items[i-1].ly+10) : m.y; });
+  for(let i=items.length-1;i>=0;i--){
+    const max = i===items.length-1 ? 100 : items[i+1].ly-10;
+    if(items[i].ly>max) items[i].ly = max;
+  }
+  items.forEach(m=>{
+    const tick = document.createElement('div');
+    tick.className = 'tick';
+    tick.style.top = m.y+'%';
+    tick.style.background = m.c;
+    el.appendChild(tick);
+    const l = document.createElement('div');
+    l.className = 'lbl';
+    l.style.top = m.ly+'%';
+    l.style.setProperty('--c', m.c);
+    l.innerHTML = '<b>'+m.t+'</b><span>'+fmt(m.p)+'</span>';
+    el.appendChild(l);
+  });
+}
+
+function calc(){
+  const cap = +$('capital').value||0;
+  const margin = +$('margin').value||0;
+  const lev = +$('levSlider').value||1;
+  const entry = +$('entry').value;
+  const sl = +$('sl').value;
+  const tp = +$('tp').value;
+  const hasTp = $('tp').value !== '' && tp>0;
+  const long = state.dir==='long';
+  const err = $('err'); err.textContent='';
+
+  const dash = ['pos','margOut','riskOut','liqOut','rrOut','tpPnl','slPnl','slDist','liqDist','riskLvl','feeOpen','feeClose','feeTotal','feePct','netTp','netSl'];
+  if(!entry || !sl || entry<=0 || sl<=0){
+    dash.forEach(d=>$(d).textContent='—');
+    $('feeRates').textContent = '';
+    drawLadder(null);
+    resetBar(); return;
+  }
+  // Validate direction of SL/TP
+  if(long && sl>=entry) err.textContent='En LONG el stop loss debe estar por debajo de la entrada.';
+  else if(!long && sl<=entry) err.textContent='En SHORT el stop loss debe estar por encima de la entrada.';
+  else if(hasTp && ((long && tp<=entry)||(!long && tp>=entry))) err.textContent='El take profit no es coherente con la dirección.';
+
+  const notional = margin*lev;
+  const qty = notional/entry;
+  const slDistPct = Math.abs(entry-sl)/entry*100;
+  const riskUsd = qty*Math.abs(entry-sl);
+  const riskPctCap = cap>0 ? riskUsd/cap*100 : 0;
+
+  const MMR = 0.005;
+  const liq = long ? entry*(1-1/lev+MMR) : entry*(1+1/lev-MMR);
+  const liqDistPct = Math.abs(entry-liq)/entry*100;
+
+  let tpPnl=NaN, rr=NaN;
+  if(hasTp){
+    tpPnl = qty*Math.abs(tp-entry);
+    rr = riskUsd>0 ? tpPnl/riskUsd : NaN;
+  }
+  const slPnl = -riskUsd;
+
+  // Fees (on notional, open + close)
+  const feeRate = (state.type==='maker'?state.ex.maker:state.ex.taker)/100;
+  const feeOpen = notional*feeRate;
+  const feeClose = (hasTp? notional*feeRate : notional*feeRate);
+  const feeTotal = feeOpen+feeClose;
+  const feePct = margin>0 ? feeTotal/margin*100 : NaN;
+
+  // Exit notional for TP / SL to estimate fees on closing
+  const netTp = hasTp ? tpPnl - feeOpen - (qty*tp)*feeRate : NaN;
+  const netSl = slPnl - feeOpen - (qty*sl)*feeRate;
+
+  $('pos').textContent = fmt(notional)+' USDT';
+  $('margOut').textContent = fmt(margin)+' USDT';
+  $('riskOut').textContent = fmt(riskUsd)+' USDT ('+fmt(riskPctCap,1)+'%)';
+  $('liqOut').textContent = liq>0 ? fmt(liq)+' USDT' : 'N/A';
+  $('rrOut').textContent = isFinite(rr) ? '1 : '+fmt(rr) : '—';
+  $('tpPnl').textContent = isFinite(tpPnl) ? fmtSigned(tpPnl)+' USDT' : '—';
+  $('tpPnl').className = 'v pos';
+  $('slPnl').textContent = fmtSigned(slPnl)+' USDT';
+  $('slDist').textContent = fmt(slDistPct)+'%';
+  $('liqDist').textContent = fmt(liqDistPct)+'%';
+
+  $('feeRates').textContent = `Maker ${state.ex.maker.toFixed(2)}% · Taker ${state.ex.taker.toFixed(2)}%`;
+  $('feeOpen').textContent = fmt(feeOpen)+' USDT';
+  $('feeClose').textContent = fmt(feeClose)+' USDT';
+  $('feeTotal').textContent = fmt(feeTotal)+' USDT';
+  $('feePct').textContent = fmt(feePct,3)+'%';
+  $('netTp').textContent = isFinite(netTp) ? fmtSigned(netTp)+' USDT' : '—';
+  $('netTp').className = 'v '+(netTp>=0?'pos':'neg');
+  $('netSl').textContent = fmtSigned(netSl)+' USDT';
+
+  // Risk level based on % of capital at risk
+  let lvl, cls, idx;
+  if(riskPctCap<=1){lvl='BAJO';cls='low';idx=1}
+  else if(riskPctCap<=2){lvl='MODERADO';cls='mod';idx=2}
+  else if(riskPctCap<=5){lvl='ALTO';cls='high';idx=3}
+  else {lvl='EXTREMO';cls='ext';idx=4}
+  if(lev>=50 && idx<3){lvl='ALTO';cls='high';idx=3}
+  $('riskLvl').textContent = lvl;
+  $('riskLvl').className = 'v '+({low:'pos',mod:'',high:'',ext:'neg'})[cls];
+  const bars = document.querySelectorAll('#riskBar div');
+  bars.forEach((b,i)=>{ b.className = i<idx ? 'on '+cls : ''; });
+
+  drawLadder({entry, sl, tp: hasTp ? tp : null, liq});
+}
+function resetBar(){ document.querySelectorAll('#riskBar div').forEach(b=>b.className=''); $('riskLvl').textContent='—'; }
+
+syncFromPct(20);
+setLev(10);
+calc();
+</script>
+</body>
+</html>
